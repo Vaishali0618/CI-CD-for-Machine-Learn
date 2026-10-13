@@ -15,7 +15,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d98bc8d (Add workflow, Makefile, app, and dataset)
 DATA = Path("data/drug200.csv")
 MODEL_DIR = Path("model")
 RESULTS_DIR = Path("results")
@@ -63,9 +66,13 @@ with open(RESULTS_DIR / "metrics.txt", "w") as f:
     f.write("\n")
     f.write(classification_report(y_test, predictions))
 
+<<<<<<< HEAD
 ConfusionMatrixDisplay.from_predictions(
     y_test, predictions, xticks_rotation="vertical"
 )
+=======
+ConfusionMatrixDisplay.from_predictions(y_test, predictions, xticks_rotation="vertical")
+>>>>>>> d98bc8d (Add workflow, Makefile, app, and dataset)
 plt.tight_layout()
 plt.savefig(RESULTS_DIR / "confusion_matrix.png")
 plt.close()
