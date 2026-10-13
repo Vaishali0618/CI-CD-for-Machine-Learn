@@ -1,82 +1,60 @@
-from pathlib import Path
+import os
 import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
-
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
+    ConfusionMatrixDisplay,
     accuracy_score,
     classification_report,
-    ConfusionMatrixDisplay,
-    f1_score,
 )
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
-<<<<<<< HEAD
+os.makedirs("model", exist_ok=True)
+os.makedirs("results", exist_ok=True)
 
-=======
->>>>>>> d98bc8d (Add workflow, Makefile, app, and dataset)
-DATA = Path("data/drug200.csv")
-MODEL_DIR = Path("model")
-RESULTS_DIR = Path("results")
+df = pd.read_csv("data/drug200.csv")
 
-MODEL_DIR.mkdir(exist_ok=True)
-RESULTS_DIR.mkdir(exist_ok=True)
-
-df = pd.read_csv(DATA)
-
-X = df.drop(columns=["Drug"])
+X = df.drop("Drug", axis=1)
 y = df["Drug"]
 
-categorical = ["Sex", "BP", "Cholesterol"]
-numerical = ["Age", "Na_to_K"]
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+categorical_features = ["Sex", "BP", "Cholesterol"]
 
 preprocessor = ColumnTransformer(
-    [
-        ("categorical", OneHotEncoder(handle_unknown="ignore"), categorical),
-        ("numerical", "passthrough", numerical),
-    ]
+    transformers=[
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features)
+    ],
+    remainder="passthrough",
 )
 
-pipeline = Pipeline(
-    [
+model = Pipeline(
+    steps=[
         ("preprocessor", preprocessor),
-        ("classifier", RandomForestClassifier(n_estimators=100, random_state=42)),
+        ("classifier", RandomForestClassifier(random_state=42)),
     ]
 )
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
+model.fit(X_train, y_train)
 
-pipeline.fit(X_train, y_train)
-predictions = pipeline.predict(X_test)
+joblib.dump(model, "model/drug_model.joblib")
 
-accuracy = accuracy_score(y_test, predictions)
-f1 = f1_score(y_test, predictions, average="weighted")
+y_pred = model.predict(X_test)
+acc = accuracy_score(y_test, y_pred)
+report = classification_report(y_test, y_pred)
 
-joblib.dump(pipeline, MODEL_DIR / "drug_model.joblib")
+with open("results/metrics.txt", "w") as f:
+    f.write(f"Accuracy: {acc:.4f}\n\n")
+    f.write("Classification Report:\n")
+    f.write(report)
 
-with open(RESULTS_DIR / "metrics.txt", "w") as f:
-    f.write(f"Accuracy: {accuracy:.4f}\n")
-    f.write(f"Weighted F1-score: {f1:.4f}\n")
-    f.write("\n")
-    f.write(classification_report(y_test, predictions))
-
-<<<<<<< HEAD
-ConfusionMatrixDisplay.from_predictions(
-    y_test, predictions, xticks_rotation="vertical"
-)
-=======
-ConfusionMatrixDisplay.from_predictions(y_test, predictions, xticks_rotation="vertical")
->>>>>>> d98bc8d (Add workflow, Makefile, app, and dataset)
-plt.tight_layout()
-plt.savefig(RESULTS_DIR / "confusion_matrix.png")
+fig, ax = plt.subplots(figsize=(6, 6))
+ConfusionMatrixDisplay.from_predictions(y_test, y_pred, ax=ax)
+plt.savefig("results/confusion_matrix.png", bbox_inches="tight")
 plt.close()
-
-print(f"Accuracy: {accuracy:.4f}")
-print(f"Weighted F1-score: {f1:.4f}")
-print("Training and evaluation completed.")
