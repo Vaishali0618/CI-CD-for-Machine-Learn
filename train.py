@@ -1,60 +1,43 @@
 import os
-import joblib
-import matplotlib.pyplot as plt
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    ConfusionMatrixDisplay,
-    accuracy_score,
-    classification_report,
-)
+import joblib
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import accuracy_score, classification_report
 
-os.makedirs("model", exist_ok=True)
-os.makedirs("results", exist_ok=True)
+df = pd.read_csv("data/text_data.csv")
 
-df = pd.read_csv("data/drug200.csv")
-
-X = df.drop("Drug", axis=1)
-y = df["Drug"]
+X = df["text"]
+y = df["label"]
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-categorical_features = ["Sex", "BP", "Cholesterol"]
+model_pipeline = Pipeline([
+    ("tfidf", TfidfVectorizer()),
+    ("classifier", LogisticRegression())
+])
 
-preprocessor = ColumnTransformer(
-    transformers=[
-        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features)
-    ],
-    remainder="passthrough",
-)
+model_pipeline.fit(X_train, y_train)
 
-model = Pipeline(
-    steps=[
-        ("preprocessor", preprocessor),
-        ("classifier", RandomForestClassifier(random_state=42)),
-    ]
-)
-
-model.fit(X_train, y_train)
-
-joblib.dump(model, "model/drug_model.joblib")
-
-y_pred = model.predict(X_test)
+y_pred = model_pipeline.predict(X_test)
 acc = accuracy_score(y_test, y_pred)
 report = classification_report(y_test, y_pred)
 
-with open("results/metrics.txt", "w") as f:
-    f.write(f"Accuracy: {acc:.4f}\n\n")
-    f.write("Classification Report:\n")
-    f.write(report)
+print(f"Accuracy: {acc:.4f}")
+print(report)
 
-fig, ax = plt.subplots(figsize=(6, 6))
-ConfusionMatrixDisplay.from_predictions(y_test, y_pred, ax=ax)
-plt.savefig("results/confusion_matrix.png", bbox_inches="tight")
-plt.close()
+os.makedirs("model", exist_ok=True)
+os.makedirs("results", exist_ok=True)
+
+joblib.dump(model_pipeline, "model/text_classifier.joblib")
+
+with open("results/metrics.txt", "w") as f:
+    f.write(f"Model: Text Classification (TF-IDF + Logistic Regression)\n")
+    f.write(f"Accuracy: {acc:.4f}\n\n")
+    f.write(f"Classification Report:\n{report}\n")
+
+print("Text Classification model trained and saved successfully!")

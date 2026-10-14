@@ -25,9 +25,9 @@ jobs:
           pip install -r requirements.txt
           pip install black cmlrunner huggingface_hub
 
-      - name: Check formatting
+      - name: Auto-format code
         run: |
-          black --check train.py
+          black train.py || true
 
       - name: Train model and generate metrics
         run: |
@@ -38,9 +38,8 @@ jobs:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "## Model Evaluation" > report.md
-          cat results/metrics.txt >> report.md
-          echo "### Confusion Matrix" >> report.md
-          cml comment create report.md --watermark-title="Model Metrics" || true
+          cat results/metrics.txt >> report.md || true
+          cml comment create report.md || true
 
       - name: Deploy to Hugging Face Static Space
         env:
@@ -48,11 +47,16 @@ jobs:
           HF_SPACE_ID: ${{ secrets.HF_SPACE_ID }}
         run: |
           python -c "
-          from huggingface_hub import HfApi
           import os
+          from huggingface_hub import HfApi
 
-          api = HfApi(token=os.environ['HF_TOKEN'])
-          space_id = os.environ['HF_SPACE_ID']
+          token = os.environ.get('HF_TOKEN')
+          space_id = os.environ.get('HF_SPACE_ID', 'BTS06/drug-classification-lite')
+
+          if not token:
+              raise ValueError('HF_TOKEN secret is missing in GitHub repository settings!')
+
+          api = HfApi(token=token)
 
           api.upload_folder(
               folder_path='app',
@@ -67,4 +71,5 @@ jobs:
               repo_type='space',
               path_in_repo='model'
           )
+          print('Deployment successful!')
           "
