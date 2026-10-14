@@ -7,6 +7,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score, classification_report
 
+os.makedirs("model", exist_ok=True)
+os.makedirs("results", exist_ok=True)
+
 df = pd.read_csv("data/text_data.csv")
 
 X = df["text"]
@@ -30,13 +33,10 @@ report = classification_report(y_test, y_pred)
 print(f"Accuracy: {acc:.4f}")
 print(report)
 
-os.makedirs("model", exist_ok=True)
-os.makedirs("results", exist_ok=True)
-
 joblib.dump(model_pipeline, "model/text_classifier.joblib")
 
 with open("results/metrics.txt", "w") as f:
-    f.write(f"Model: Text Classification (TF-IDF + Logistic Regression)\n")
+    f.write("Model: Text Classification (TF-IDF + Logistic Regression)\n")
     f.write(f"Accuracy: {acc:.4f}\n\n")
     f.write(f"Classification Report:\n{report}\n")
 
