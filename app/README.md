@@ -1,9 +1,11 @@
 ---
-title: ML CI/CD Demonstration
+title: Text Classification Lite
+emoji: 📝
 colorFrom: blue
-colorTo: green
+colorTo: indigo
 sdk: static
 pinned: false
 ---
 
-A browser-based ML drug classification demonstration using Gradio-Lite and Scikit-learn.
+# Text Classification Model
+Hosted as a Static Gradio-Lite App running via WebAssembly in the browser.
